@@ -16,10 +16,6 @@ control_points_df = pd.read_csv(control_points_path)
 kvalues_df['Level'] = kvalues_df['Label_unique'].str[:2]
 kvalues_df['Zone'] = kvalues_df['Label_unique'].str[-2:]
 
-# Reset button
-if st.sidebar.button('Reset All'):
-    st.experimental_rerun()
-
 # Streamlit app
 st.title('Plot_AAS')
 
@@ -42,11 +38,11 @@ file_selection = st.sidebar.selectbox('Select Data File', ['Hydrographs', 'Kvalu
 plot_type = st.sidebar.selectbox('Select Plot Type', [
     'scatter', 'line', 'bar', 'area', 'pie', 'histogram', 'box', 
     'violin', 'surface', 'heatmap'
-], index=5)
+])
 
 if file_selection == 'Hydrographs':
     df = hydrographs_df
-    x_axis = st.sidebar.selectbox('Select X Axis', df.columns, index=list(df.columns).index('CP001'))
+    x_axis = st.sidebar.selectbox('Select X Axis', df.columns)
     y_axis = st.sidebar.selectbox('Select Y Axis', df.columns)
     z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
 else:
@@ -69,40 +65,40 @@ with st.sidebar.expander('Filter Options', expanded=False):
     for column, values in filters.items():
         filtered_df = filtered_df[filtered_df[column].isin(values)]
 
-    # Remove outliers based on the average value
-    percentile_filter = st.checkbox("Remove Outliers")
-    if percentile_filter:
-        outlier_threshold = st.slider('Select Standard Deviation Threshold', 1, 3, 2)
-        if y_axis in filtered_df.columns:
-            mean_value = filtered_df[y_axis].mean()
-            std_dev = filtered_df[y_axis].std()
-            lower_bound = mean_value - outlier_threshold * std_dev
-            upper_bound = mean_value + outlier_threshold * std_dev
-            filtered_df = filtered_df[(filtered_df[y_axis] >= lower_bound) & (filtered_df[y_axis] <= upper_bound)]
-
-    # Display filtered data info
-    if st.checkbox("Show Filtered Data Info"):
-        st.write("Filtered Dataframe")
-        st.write(filtered_df.head())
-        st.write("Number of rows after filtering: ", len(filtered_df))
-
-    # Aggregation options
-    aggregation_function = st.selectbox('Select Aggregation Function', ['None', 'Max', 'Min', 'Average', 'Sum'])
-    if aggregation_function != 'None':
-        agg_df = filtered_df.groupby([x_axis]).agg({y_axis: aggregation_function.lower()})
-        filtered_df = filtered_df.merge(agg_df, on=[x_axis], suffixes=('', f'_{aggregation_function.lower()}'))
-        y_axis += f'_{aggregation_function.lower()}'
-
-    # Display aggregated data info
-    if st.checkbox("Show Aggregated Data Info"):
-        st.write("Aggregated Dataframe")
-        st.write(filtered_df.head())
-        st.write("Number of rows after aggregation: ", len(filtered_df))
+# Remove outliers based on the average value
+percentile_filter = st.sidebar.checkbox("Remove Outliers")
+if percentile_filter:
+    outlier_threshold = st.sidebar.slider('Select Standard Deviation Threshold', 1, 3, 2)
+    if y_axis in filtered_df.columns:
+        mean_value = filtered_df[y_axis].mean()
+        std_dev = filtered_df[y_axis].std()
+        lower_bound = mean_value - outlier_threshold * std_dev
+        upper_bound = mean_value + outlier_threshold * std_dev
+        filtered_df = filtered_df[(filtered_df[y_axis] >= lower_bound) & (filtered_df[y_axis] <= upper_bound)]
 
 # Lookup and merge additional data dynamically for Hydrographs file
 if file_selection == 'Hydrographs' and 'Label_unique' in filtered_df.columns:
     filtered_df = filtered_df.merge(control_points_df[['ID', 'Zone', 'Level']], left_on='Label_unique', right_on='ID', how='left')
     filtered_df = filtered_df.merge(kvalues_df, on=['Level', 'Zone'], how='left')
+
+# Display filtered data info
+if st.sidebar.checkbox("Show Filtered Data Info"):
+    st.write("Filtered Dataframe")
+    st.write(filtered_df.head())
+    st.write("Number of rows after filtering: ", len(filtered_df))
+
+# Aggregation options
+aggregation_function = st.sidebar.selectbox('Select Aggregation Function', ['None', 'Max', 'Min', 'Average', 'Sum'])
+if aggregation_function != 'None':
+    agg_df = filtered_df.groupby([x_axis]).agg({y_axis: aggregation_function.lower()})
+    filtered_df = filtered_df.merge(agg_df, on=[x_axis], suffixes=('', f'_{aggregation_function.lower()}'))
+    y_axis += f'_{aggregation_function.lower()}'
+
+# Display aggregated data info
+if st.sidebar.checkbox("Show Aggregated Data Info"):
+    st.write("Aggregated Dataframe")
+    st.write(filtered_df.head())
+    st.write("Number of rows after aggregation: ", len(filtered_df))
 
 # Aesthetics options
 with st.sidebar.expander('Graph Aesthetics', expanded=False):
@@ -114,14 +110,13 @@ with st.sidebar.expander('Graph Aesthetics', expanded=False):
     marker_size = st.slider('Marker Size', 1, 20, 10)
     line_width = st.slider('Line Width', 1, 10, 2)
     color = st.color_picker('Color', '#00f900')
-    if plot_type == 'scatter':
-        scatter_line = st.checkbox('Connect Points with Lines')
 
 # Plotting
 fig = None
 
 # Handle different plot types
 if plot_type == 'scatter':
+    scatter_line = st.sidebar.checkbox('Connect Points with Lines')
     fig = px.scatter(filtered_df, x=x_axis, y=y_axis)
     fig.update_traces(marker=dict(size=marker_size, color=color))
     if scatter_line:
