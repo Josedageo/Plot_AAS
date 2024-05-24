@@ -34,7 +34,10 @@ if st.sidebar.checkbox("Show Data Info"):
     st.write("Columns: ", control_points_df.columns.tolist())
 
 # Sidebar for selecting plot parameters
-plot_type = st.sidebar.selectbox('Select Plot Type', ['scatter', 'line', 'bar', 'area', 'pie', 'histogram', 'box', 'violin', 'surface', 'heatmap'])
+plot_type = st.sidebar.selectbox('Select Plot Type', [
+    'scatter', 'line', 'bar', 'area', 'pie', 'histogram', 'box', 
+    'violin', 'surface', 'heatmap'
+])
 x_axis = st.sidebar.selectbox('Select X Axis', hydrographs_df.columns)
 y_axis = st.sidebar.selectbox('Select Y Axis', hydrographs_df.columns)
 z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(hydrographs_df.columns))
@@ -90,11 +93,17 @@ color = st.sidebar.color_picker('Color', '#00f900')
 
 # Plotting
 fig = None
+
+# Handle different plot types
 if plot_type == 'scatter':
+    scatter_line = st.sidebar.checkbox('Connect Points with Lines')
     fig = px.scatter(filtered_df, x=x_axis, y=y_axis)
     fig.update_traces(marker=dict(size=marker_size, color=color))
+    if scatter_line:
+        fig.update_traces(mode='lines+markers')
 elif plot_type == 'line':
-    fig = px.line(filtered_df, x=x_axis, y=y_axis)
+    line_shape = st.sidebar.selectbox('Line Shape', ['linear', 'spline'])
+    fig = px.line(filtered_df, x=x_axis, y=y_axis, line_shape=line_shape)
     fig.update_traces(line=dict(width=line_width, color=color))
 elif plot_type == 'bar':
     fig = px.bar(filtered_df, x=x_axis, y=y_axis)
@@ -106,7 +115,8 @@ elif plot_type == 'pie':
     fig = px.pie(filtered_df, names=x_axis, values=y_axis)
     fig.update_traces(marker=dict(colors=[color]))
 elif plot_type == 'histogram':
-    fig = px.histogram(filtered_df, x=x_axis, y=y_axis)
+    fig = px.histogram(filtered_df, x=x_axis)
+    y_axis_label = 'Count'
     fig.update_traces(marker_color=color)
 elif plot_type == 'box':
     fig = px.box(filtered_df, x=x_axis, y=y_axis)
