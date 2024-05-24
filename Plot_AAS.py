@@ -1,15 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from io import BytesIO
-import base64
-from datetime import datetime
-
-# Ensure that the kaleido library is installed
-try:
-    import kaleido
-except ImportError:
-    st.error("Kaleido is required for saving plots as PNG. Please install it using 'pip install kaleido'.")
 
 # Define the correct file paths using relative paths
 hydrographs_path = './compiled_HydroGraphs.csv'
@@ -190,21 +181,6 @@ if 'filtered_df' in locals():
             yaxis_showgrid=show_grid
         )
         st.plotly_chart(fig)
-
-        # Create a download button for the plot
-        try:
-            buffer = BytesIO()
-            fig.write_image(buffer, format='png')
-            buffer.seek(0)
-            b64 = base64.b64encode(buffer.read()).decode()
-            current_date = datetime.now().strftime('%Y%m%d')
-            z_axis_part = f"_{z_axis}" if z_axis else ""
-            filters_str = '_'.join([f"{k}={v}" for k, v in filters.items()])
-            filename = f"{x_axis}_{y_axis}{z_axis_part}_{filters_str}_{current_date}.png".replace(" ", "_").replace(":", "-")
-            href = f'<a href="data:file/png;base64,{b64}" download="{filename}">Download Plot as PNG</a>'
-            st.markdown(href, unsafe_allow_html=True)
-        except Exception as e:
-            st.error(f"Error generating PNG: {e}")
     else:
         st.write('Select a valid plot type and axes.')
 
