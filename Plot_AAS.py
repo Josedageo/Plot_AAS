@@ -82,17 +82,14 @@ with st.sidebar.expander('Filter Options', expanded=False):
         for column, values in filters.items():
             filtered_df = filtered_df[filtered_df[column].isin(values)]
 
-        # Remove outliers based on the average value
-        percentile_filter = st.checkbox("Remove Outliers")
+        # Percentile-based filtering
+        percentile_filter = st.checkbox("Filter by Percentile")
         if percentile_filter:
-            outlier_threshold = st.slider('Select Standard Deviation Threshold', 1, 3, 2)
+            percentile = st.slider('Select Percentile', 0, 100, 95)
             if y_axis in filtered_df.columns and pd.api.types.is_numeric_dtype(filtered_df[y_axis]):
-                mean_value = filtered_df[y_axis].mean()
-                std_dev = filtered_df[y_axis].std()
-                lower_bound = mean_value - outlier_threshold * std_dev
-                upper_bound = mean_value + outlier_threshold * std_dev
+                lower_bound = filtered_df[y_axis].quantile((100 - percentile) / 200)
+                upper_bound = filtered_df[y_axis].quantile(1 - (100 - percentile) / 200)
                 filtered_df = filtered_df[(filtered_df[y_axis] >= lower_bound) & (filtered_df[y_axis] <= upper_bound)]
-                st.write(f"Debug: Mean value = {mean_value}, Std Dev = {std_dev}")
                 st.write(f"Debug: Lower Bound = {lower_bound}, Upper Bound = {upper_bound}")
 
         # Display filtered data info
