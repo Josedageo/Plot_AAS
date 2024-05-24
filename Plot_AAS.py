@@ -75,7 +75,7 @@ with st.sidebar.expander('Filter Options', expanded=False):
     percentile_filter = st.checkbox("Remove Outliers")
     if percentile_filter:
         outlier_threshold = st.slider('Select Standard Deviation Threshold', 1, 3, 2)
-        if y_axis in filtered_df.columns:
+        if y_axis in filtered_df.columns and pd.api.types.is_numeric_dtype(filtered_df[y_axis]):
             mean_value = filtered_df[y_axis].mean()
             std_dev = filtered_df[y_axis].std()
             lower_bound = mean_value - outlier_threshold * std_dev
