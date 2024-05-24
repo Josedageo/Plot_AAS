@@ -52,25 +52,28 @@ else:
     z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
 
 # Filtering options
-filter_columns = st.sidebar.multiselect('Filter Columns', df.columns)
-filters = {}
-for column in filter_columns:
-    unique_values = df[column].unique()
-    selected_values = st.sidebar.multiselect(f'Select values for {column}', unique_values, default=unique_values)
-    filters[column] = selected_values
+with st.sidebar.expander('Filter Options', expanded=False):
+    filter_columns = st.multiselect('Filter Columns', df.columns)
+    filters = {}
+    for column in filter_columns:
+        unique_values = df[column].unique()
+        selected_values = st.multiselect(f'Select values for {column}', unique_values, default=unique_values)
+        filters[column] = selected_values
 
-# Apply filters
-filtered_df = df.copy()
-for column, values in filters.items():
-    filtered_df = filtered_df[filtered_df[column].isin(values)]
+    # Apply filters
+    filtered_df = df.copy()
+    for column, values in filters.items():
+        filtered_df = filtered_df[filtered_df[column].isin(values)]
 
-# Percentile filter
-percentile_filter = st.sidebar.checkbox("Filter by Percentile")
+# Remove outliers based on the average value
+percentile_filter = st.sidebar.checkbox("Remove Outliers")
 if percentile_filter:
-    percentile_value = st.sidebar.slider('Select Percentile Range', 0, 100, (5, 95))
+    outlier_threshold = st.sidebar.slider('Select Standard Deviation Threshold', 1, 3, 2)
     if y_axis in filtered_df.columns:
-        lower_bound = filtered_df[y_axis].quantile(percentile_value[0] / 100)
-        upper_bound = filtered_df[y_axis].quantile(percentile_value[1] / 100)
+        mean_value = filtered_df[y_axis].mean()
+        std_dev = filtered_df[y_axis].std()
+        lower_bound = mean_value - outlier_threshold * std_dev
+        upper_bound = mean_value + outlier_threshold * std_dev
         filtered_df = filtered_df[(filtered_df[y_axis] >= lower_bound) & (filtered_df[y_axis] <= upper_bound)]
 
 # Lookup and merge additional data dynamically for Hydrographs file
@@ -98,15 +101,15 @@ if st.sidebar.checkbox("Show Aggregated Data Info"):
     st.write("Number of rows after aggregation: ", len(filtered_df))
 
 # Aesthetics options
-st.sidebar.header('Graph Aesthetics')
-title = st.sidebar.text_input('Title', 'Graph Title')
-x_axis_label = st.sidebar.text_input('X Axis Label', x_axis)
-y_axis_label = st.sidebar.text_input('Y Axis Label', y_axis)
-show_legend = st.sidebar.checkbox('Show Legend', True)
-show_grid = st.sidebar.checkbox('Show Grid', True)
-marker_size = st.sidebar.slider('Marker Size', 1, 20, 10)
-line_width = st.sidebar.slider('Line Width', 1, 10, 2)
-color = st.sidebar.color_picker('Color', '#00f900')
+with st.sidebar.expander('Graph Aesthetics', expanded=False):
+    title = st.text_input('Title', 'Graph Title')
+    x_axis_label = st.text_input('X Axis Label', x_axis)
+    y_axis_label = st.text_input('Y Axis Label', y_axis)
+    show_legend = st.checkbox('Show Legend', True)
+    show_grid = st.checkbox('Show Grid', True)
+    marker_size = st.slider('Marker Size', 1, 20, 10)
+    line_width = st.slider('Line Width', 1, 10, 2)
+    color = st.color_picker('Color', '#00f900')
 
 # Plotting
 fig = None
