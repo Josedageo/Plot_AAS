@@ -44,9 +44,11 @@ plot_type = st.sidebar.selectbox('Select Plot Type', [
     'violin', 'surface', 'heatmap'
 ], index=5)
 
+default_column = 'CP001' if 'CP001' in hydrographs_df.columns else hydrographs_df.columns[0]
+
 if file_selection == 'Hydrographs':
     df = hydrographs_df
-    x_axis = st.sidebar.selectbox('Select X Axis', df.columns, index=list(df.columns).index('CP001'))
+    x_axis = st.sidebar.selectbox('Select X Axis', df.columns, index=list(df.columns).index(default_column))
     y_axis = st.sidebar.selectbox('Select Y Axis', df.columns)
     z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
 else:
