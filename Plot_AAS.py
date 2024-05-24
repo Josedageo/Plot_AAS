@@ -92,6 +92,8 @@ with st.sidebar.expander('Filter Options', expanded=False):
                 lower_bound = mean_value - outlier_threshold * std_dev
                 upper_bound = mean_value + outlier_threshold * std_dev
                 filtered_df = filtered_df[(filtered_df[y_axis] >= lower_bound) & (filtered_df[y_axis] <= upper_bound)]
+                st.write(f"Debug: Mean value = {mean_value}, Std Dev = {std_dev}")
+                st.write(f"Debug: Lower Bound = {lower_bound}, Upper Bound = {upper_bound}")
 
         # Display filtered data info
         if st.checkbox("Show Filtered Data Info"):
