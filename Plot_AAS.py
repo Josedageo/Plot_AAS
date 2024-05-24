@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from io import BytesIO
+import base64
 
 # Define the correct file paths using relative paths
 hydrographs_path = './compiled_HydroGraphs.csv'
@@ -71,6 +73,10 @@ with st.sidebar.expander('Filter Options', expanded=False):
     for column, values in filters.items():
         filtered_df = filtered_df[filtered_df[column].isin(values)]
 
+    # Debug: Display filtered data
+    st.sidebar.write("Filtered Data:")
+    st.sidebar.write(filtered_df.head())
+
     # Remove outliers based on the average value
     percentile_filter = st.checkbox("Remove Outliers")
     if percentile_filter:
@@ -81,6 +87,9 @@ with st.sidebar.expander('Filter Options', expanded=False):
             lower_bound = mean_value - outlier_threshold * std_dev
             upper_bound = mean_value + outlier_threshold * std_dev
             filtered_df = filtered_df[(filtered_df[y_axis] >= lower_bound) & (filtered_df[y_axis] <= upper_bound)]
+            # Debug: Display outlier removal info
+            st.sidebar.write(f"Mean: {mean_value}, Std Dev: {std_dev}")
+            st.sidebar.write(f"Lower Bound: {lower_bound}, Upper Bound: {upper_bound}")
 
     # Display filtered data info
     if st.checkbox("Show Filtered Data Info"):
@@ -169,6 +178,14 @@ if fig:
         yaxis_showgrid=show_grid
     )
     st.plotly_chart(fig)
+
+    # Create a download button for the plot
+    buffer = BytesIO()
+    fig.write_image(buffer, format='png')
+    buffer.seek(0)
+    b64 = base64.b64encode(buffer.read()).decode()
+    href = f'<a href="data:file/png;base64,{b64}" download="{title}_{x_axis_label}_{y_axis_label}.png">Download Plot as PNG</a>'
+    st.markdown(href, unsafe_allow_html=True)
 else:
     st.write('Select a valid plot type and axes.')
 
@@ -177,13 +194,4 @@ st.sidebar.header('Additional Plots')
 plot_additional = st.sidebar.checkbox('Plot Additional Data')
 if plot_additional:
     additional_x_axis = st.sidebar.selectbox('Select X Axis for Additional Plot', kvalues_df.columns)
-    additional_y_axis = st.sidebar.selectbox('Select Y Axis for Additional Plot', kvalues_df.columns)
-    additional_df = kvalues_df.copy()
-    # Apply filters based on zone and level from control_points_df
-    if 'Zone' in control_points_df.columns and 'Level' in control_points_df.columns:
-        selected_zone = st.sidebar.selectbox('Select Zone', control_points_df['Zone'].unique())
-        selected_level = st.sidebar.selectbox('Select Level', control_points_df['Level'].unique())
-        additional_df = additional_df[(additional_df['Zone'] == selected_zone) & (additional_df['Level'] == selected_level)]
-
-    additional_fig = px.scatter(additional_df, x=additional_x_axis, y=additional_y_axis)
-    st.plotly_chart(additional_fig)
+    additional_y_axis = st.sidebar.select
