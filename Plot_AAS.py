@@ -5,6 +5,12 @@ from io import BytesIO
 import base64
 from datetime import datetime
 
+# Ensure that the kaleido library is installed
+try:
+    import kaleido
+except ImportError:
+    st.error("Kaleido is required for saving plots as PNG. Please install it using 'pip install kaleido'.")
+
 # Define the correct file paths using relative paths
 hydrographs_path = './compiled_HydroGraphs.csv'
 kvalues_path = './Compiled_Kvalues.csv'
@@ -179,15 +185,18 @@ if fig:
     st.plotly_chart(fig)
 
     # Create a download button for the plot
-    buffer = BytesIO()
-    fig.write_image(buffer, format='png')
-    buffer.seek(0)
-    b64 = base64.b64encode(buffer.read()).decode()
-    filters_str = '_'.join([f"{k}={v}" for k, v in filters.items()])
-    current_date = datetime.now().strftime('%Y%m%d')
-    filename = f"{current_date}_{title}_{x_axis_label}_{y_axis_label}_{filters_str}.png".replace(" ", "_")
-    href = f'<a href="data:file/png;base64,{b64}" download="{filename}">Download Plot as PNG</a>'
-    st.markdown(href, unsafe_allow_html=True)
+    try:
+        buffer = BytesIO()
+        fig.write_image(buffer, format='png')
+        buffer.seek(0)
+        b64 = base64.b64encode(buffer.read()).decode()
+        filters_str = '_'.join([f"{k}={v}" for k, v in filters.items()])
+        current_date = datetime.now().strftime('%Y%m%d')
+        filename = f"{current_date}_{title}_{x_axis_label}_{y_axis_label}_{filters_str}.png".replace(" ", "_").replace(":", "-")
+        href = f'<a href="data:file/png;base64,{b64}" download="{filename}">Download Plot as PNG</a>'
+        st.markdown(href, unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Error generating PNG: {e}")
 else:
     st.write('Select a valid plot type and axes.')
 
