@@ -12,14 +12,6 @@ hydrographs_df = pd.read_csv(hydrographs_path)
 kvalues_df = pd.read_csv(kvalues_path)
 control_points_df = pd.read_csv(control_points_path)
 
-# Preprocess kvalues_df to extract level and zone
-kvalues_df['Level'] = kvalues_df['Label_unique'].str[:2]
-kvalues_df['Zone'] = kvalues_df['Label_unique'].str[-2:]
-
-# Extract level and zone from control points
-control_points_df['Level'] = control_points_df['ID'].str[:2]
-control_points_df['Zone'] = control_points_df['ID'].str[-2:]
-
 # Reset button
 if st.sidebar.button('Reset All'):
     st.experimental_rerun()
@@ -42,7 +34,7 @@ if st.sidebar.checkbox("Show Data Info"):
     st.write("Columns: ", control_points_df.columns.tolist())
 
 # Sidebar for selecting plot parameters
-file_selection = st.sidebar.selectbox('Select Data File', ['Hydrographs', 'Kvalues', 'Combined'])
+file_selection = st.sidebar.selectbox('Select Data File', ['Hydrographs', 'Kvalues'])
 plot_type = st.sidebar.selectbox('Select Plot Type', [
     'scatter', 'line', 'bar', 'area', 'pie', 'histogram', 'box', 
     'violin', 'surface', 'heatmap'
@@ -55,17 +47,8 @@ if file_selection == 'Hydrographs':
     x_axis = st.sidebar.selectbox('Select X Axis', df.columns, index=list(df.columns).index(default_column))
     y_axis = st.sidebar.selectbox('Select Y Axis', df.columns)
     z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
-elif file_selection == 'Kvalues':
-    df = kvalues_df
-    x_axis = st.sidebar.selectbox('Select X Axis', df.columns)
-    y_axis = st.sidebar.selectbox('Select Y Axis', df.columns)
-    z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
 else:
-    # Create a combined DataFrame using lookup logic
-    combined_df = hydrographs_df.copy()
-    combined_df = combined_df.merge(control_points_df[['ID', 'Zone', 'Level']], left_on='Label_unique', right_on='ID', how='left')
-    combined_df = combined_df.merge(kvalues_df, on=['Level', 'Zone'], how='left', suffixes=('_hydro', '_kvalues'))
-    df = combined_df
+    df = kvalues_df
     x_axis = st.sidebar.selectbox('Select X Axis', df.columns)
     y_axis = st.sidebar.selectbox('Select Y Axis', df.columns)
     z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
@@ -196,3 +179,4 @@ if plot_additional:
 
     additional_fig = px.scatter(additional_df, x=additional_x_axis, y=additional_y_axis)
     st.plotly_chart(additional_fig)
+
