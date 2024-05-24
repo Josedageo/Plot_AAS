@@ -74,10 +74,11 @@ else:
         z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
     else:
         st.error("The column 'Label_unique' does not exist in one or both DataFrames.")
+        df = pd.DataFrame()  # Create an empty DataFrame to avoid further errors
 
 # Filtering options
 with st.sidebar.expander('Filter Options', expanded=False):
-    filter_columns = st.multiselect('Filter Columns', df.columns if 'df' in locals() else [])
+    filter_columns = st.multiselect('Filter Columns', df.columns if not df.empty else [])
     filters = {}
     for column in filter_columns:
         unique_values = df[column].unique()
@@ -85,7 +86,7 @@ with st.sidebar.expander('Filter Options', expanded=False):
         filters[column] = selected_values
 
     # Apply filters
-    if 'df' in locals():
+    if not df.empty:
         filtered_df = df.copy()
         for column, values in filters.items():
             filtered_df = filtered_df[filtered_df[column].isin(values)]
@@ -196,9 +197,10 @@ if 'filtered_df' in locals():
             fig.write_image(buffer, format='png')
             buffer.seek(0)
             b64 = base64.b64encode(buffer.read()).decode()
-            filters_str = '_'.join([f"{k}={v}" for k, v in filters.items()])
             current_date = datetime.now().strftime('%Y%m%d')
-            filename = f"{current_date}_{title}_{x_axis_label}_{y_axis_label}_{filters_str}.png".replace(" ", "_").replace(":", "-")
+            z_axis_part = f"_{z_axis}" if z_axis else ""
+            filters_str = '_'.join([f"{k}={v}" for k, v in filters.items()])
+            filename = f"{x_axis}_{y_axis}{z_axis_part}_{filters_str}_{current_date}.png".replace(" ", "_").replace(":", "-")
             href = f'<a href="data:file/png;base64,{b64}" download="{filename}">Download Plot as PNG</a>'
             st.markdown(href, unsafe_allow_html=True)
         except Exception as e:
