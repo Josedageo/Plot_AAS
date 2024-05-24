@@ -12,18 +12,9 @@ hydrographs_df = pd.read_csv(hydrographs_path)
 kvalues_df = pd.read_csv(kvalues_path)
 control_points_df = pd.read_csv(control_points_path)
 
-# Preprocess and merge the data based on the requirements
-# Extract level and zone from Label_unique in kvalues_df
+# Preprocess kvalues_df to extract level and zone
 kvalues_df['Level'] = kvalues_df['Label_unique'].str[:2]
 kvalues_df['Zone'] = kvalues_df['Label_unique'].str[-2:]
-
-# Merge hydrographs with control points on control point ID (e.g., CP001)
-control_points_df['ID'] = control_points_df['ID'].astype(str)
-hydrographs_df.columns = hydrographs_df.columns.astype(str)
-merged_df = pd.merge(hydrographs_df, control_points_df, left_on='Label_unique', right_on='ID', how='left')
-
-# Merge the resulting dataframe with kvalues_df based on level and zone
-merged_df = pd.merge(merged_df, kvalues_df, on=['Level', 'Zone'], how='left')
 
 # Streamlit app
 st.title('Plot_AAS')
@@ -42,28 +33,30 @@ if st.sidebar.checkbox("Show Data Info"):
     st.write(control_points_df.head())
     st.write("Columns: ", control_points_df.columns.tolist())
 
-    st.write("Merged Dataframe")
-    st.write(merged_df.head())
-    st.write("Columns: ", merged_df.columns.tolist())
-
 # Sidebar for selecting plot parameters
 plot_type = st.sidebar.selectbox('Select Plot Type', ['scatter', 'line', 'bar', 'area', 'pie', 'histogram', 'box', 'violin', 'surface', 'heatmap'])
-x_axis = st.sidebar.selectbox('Select X Axis', merged_df.columns)
-y_axis = st.sidebar.selectbox('Select Y Axis', merged_df.columns)
-z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(merged_df.columns))
+x_axis = st.sidebar.selectbox('Select X Axis', hydrographs_df.columns)
+y_axis = st.sidebar.selectbox('Select Y Axis', hydrographs_df.columns)
+z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(hydrographs_df.columns))
 
 # Filtering options
-filter_columns = st.sidebar.multiselect('Filter Columns', merged_df.columns)
+filter_columns = st.sidebar.multiselect('Filter Columns', hydrographs_df.columns)
 filters = {}
 for column in filter_columns:
-    unique_values = merged_df[column].unique()
+    unique_values = hydrographs_df[column].unique()
     selected_values = st.sidebar.multiselect(f'Select values for {column}', unique_values, default=unique_values)
     filters[column] = selected_values
 
 # Apply filters
-filtered_df = merged_df.copy()
+filtered_df = hydrographs_df.copy()
 for column, values in filters.items():
     filtered_df = filtered_df[filtered_df[column].isin(values)]
+
+# Lookup and merge additional data dynamically
+# Adding columns from control_points_df and kvalues_df as needed for the plot
+if 'Label_unique' in filtered_df.columns:
+    filtered_df = filtered_df.merge(control_points_df[['ID', 'Zone', 'Level']], left_on='Label_unique', right_on='ID', how='left')
+    filtered_df = filtered_df.merge(kvalues_df, on=['Level', 'Zone'], how='left')
 
 # Display filtered data info
 if st.sidebar.checkbox("Show Filtered Data Info"):
