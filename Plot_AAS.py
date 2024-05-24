@@ -57,14 +57,17 @@ elif file_selection == 'Kvalues':
     y_axis = st.sidebar.selectbox('Select Y Axis', df.columns)
     z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
 else:
-    # Check if 'Label_unique' exists in both DataFrames
-    if 'Label_unique' in hydrographs_df.columns and 'Label_unique' in kvalues_df.columns:
-        df = pd.merge(hydrographs_df, kvalues_df, on='Label_unique', suffixes=('_hydro', '_kvalues'))
+    # Check if 'Label_unique' exists in hydrographs_df
+    if 'Label_unique' in hydrographs_df.columns:
+        df = hydrographs_df.copy()
+        # Adding extra columns from kvalues_df and control_points_df using VLOOKUP-like functionality
+        df = df.merge(control_points_df[['ID', 'Zone', 'Level']], left_on='Label_unique', right_on='ID', how='left')
+        df = df.merge(kvalues_df, on=['Level', 'Zone'], how='left', suffixes=('_hydro', '_kvalues'))
         x_axis = st.sidebar.selectbox('Select X Axis', df.columns)
         y_axis = st.sidebar.selectbox('Select Y Axis', df.columns)
         z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
     else:
-        st.error("The column 'Label_unique' does not exist in one or both DataFrames.")
+        st.error("The column 'Label_unique' does not exist in the hydrographs DataFrame.")
         df = pd.DataFrame()  # Create an empty DataFrame to avoid further errors
 
 # Filtering options
@@ -110,11 +113,6 @@ with st.sidebar.expander('Filter Options', expanded=False):
             st.write("Aggregated Dataframe")
             st.write(filtered_df.head())
             st.write("Number of rows after aggregation: ", len(filtered_df))
-
-# Lookup and merge additional data dynamically for Hydrographs file
-if file_selection == 'Hydrographs' and 'Label_unique' in filtered_df.columns:
-    filtered_df = filtered_df.merge(control_points_df[['ID', 'Zone', 'Level']], left_on='Label_unique', right_on='ID', how='left')
-    filtered_df = filtered_df.merge(kvalues_df, on=['Level', 'Zone'], how='left')
 
 # Aesthetics options
 with st.sidebar.expander('Graph Aesthetics', expanded=False):
