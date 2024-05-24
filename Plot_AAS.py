@@ -12,6 +12,22 @@ hydrographs_df = pd.read_csv(hydrographs_path)
 kvalues_df = pd.read_csv(kvalues_path)
 control_points_df = pd.read_csv(control_points_path)
 
+# Preprocess and merge the data based on the requirements
+# Extract level and zone from Label_unique in kvalues_df
+kvalues_df['Level'] = kvalues_df['Label_unique'].str[:2]
+kvalues_df['Zone'] = kvalues_df['Label_unique'].str[-2:]
+
+# Merge hydrographs with control points on control point ID (e.g., CP001)
+control_points_df['ID'] = control_points_df['ID'].astype(str)
+hydrographs_df.columns = hydrographs_df.columns.astype(str)
+merged_df = pd.merge(hydrographs_df, control_points_df, left_on='Label_unique', right_on='ID', how='left')
+
+# Merge the resulting dataframe with kvalues_df based on level and zone
+merged_df = pd.merge(merged_df, kvalues_df, on=['Level', 'Zone'], how='left')
+
+# Streamlit app
+st.title('Plot_AAS')
+
 # Display data info
 if st.sidebar.checkbox("Show Data Info"):
     st.write("Hydrographs Dataframe")
@@ -26,20 +42,9 @@ if st.sidebar.checkbox("Show Data Info"):
     st.write(control_points_df.head())
     st.write("Columns: ", control_points_df.columns.tolist())
 
-# Adjust the merge logic based on actual column names
-# Assuming the column names might be slightly different, adjust accordingly
-merge_columns = list(set(hydrographs_df.columns) & set(kvalues_df.columns))
-merged_df = pd.merge(hydrographs_df, kvalues_df, on=merge_columns)
-merged_df = pd.merge(merged_df, control_points_df, left_on='Label_unique', right_on='ID')
-
-# Debug: Display merged data info
-if st.sidebar.checkbox("Show Merged Data Info"):
     st.write("Merged Dataframe")
     st.write(merged_df.head())
     st.write("Columns: ", merged_df.columns.tolist())
-
-# Streamlit app
-st.title('Plot_AAS')
 
 # Sidebar for selecting plot parameters
 plot_type = st.sidebar.selectbox('Select Plot Type', ['scatter', 'line', 'bar', 'area', 'pie', 'histogram', 'box', 'violin', 'surface', 'heatmap'])
@@ -60,7 +65,7 @@ filtered_df = merged_df.copy()
 for column, values in filters.items():
     filtered_df = filtered_df[filtered_df[column].isin(values)]
 
-# Debug: Display filtered data info
+# Display filtered data info
 if st.sidebar.checkbox("Show Filtered Data Info"):
     st.write("Filtered Dataframe")
     st.write(filtered_df.head())
@@ -73,7 +78,7 @@ if aggregation_function != 'None':
     filtered_df = filtered_df.merge(agg_df, on=[x_axis], suffixes=('', f'_{aggregation_function.lower()}'))
     y_axis += f'_{aggregation_function.lower()}'
 
-# Debug: Display aggregated data info
+# Display aggregated data info
 if st.sidebar.checkbox("Show Aggregated Data Info"):
     st.write("Aggregated Dataframe")
     st.write(filtered_df.head())
