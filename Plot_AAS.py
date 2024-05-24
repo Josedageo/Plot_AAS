@@ -32,6 +32,12 @@ merge_columns = list(set(hydrographs_df.columns) & set(kvalues_df.columns))
 merged_df = pd.merge(hydrographs_df, kvalues_df, on=merge_columns)
 merged_df = pd.merge(merged_df, control_points_df, left_on='Label_unique', right_on='ID')
 
+# Debug: Display merged data info
+if st.sidebar.checkbox("Show Merged Data Info"):
+    st.write("Merged Dataframe")
+    st.write(merged_df.head())
+    st.write("Columns: ", merged_df.columns.tolist())
+
 # Streamlit app
 st.title('Plot_AAS')
 
@@ -54,7 +60,7 @@ filtered_df = merged_df.copy()
 for column, values in filters.items():
     filtered_df = filtered_df[filtered_df[column].isin(values)]
 
-# Display filtered data info
+# Debug: Display filtered data info
 if st.sidebar.checkbox("Show Filtered Data Info"):
     st.write("Filtered Dataframe")
     st.write(filtered_df.head())
@@ -67,7 +73,7 @@ if aggregation_function != 'None':
     filtered_df = filtered_df.merge(agg_df, on=[x_axis], suffixes=('', f'_{aggregation_function.lower()}'))
     y_axis += f'_{aggregation_function.lower()}'
 
-# Display aggregated data info
+# Debug: Display aggregated data info
 if st.sidebar.checkbox("Show Aggregated Data Info"):
     st.write("Aggregated Dataframe")
     st.write(filtered_df.head())
