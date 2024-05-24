@@ -192,26 +192,3 @@ if fig:
         b64 = base64.b64encode(buffer.read()).decode()
         filters_str = '_'.join([f"{k}={v}" for k, v in filters.items()])
         current_date = datetime.now().strftime('%Y%m%d')
-        filename = f"{current_date}_{title}_{x_axis_label}_{y_axis_label}_{filters_str}.png".replace(" ", "_").replace(":", "-")
-        href = f'<a href="data:file/png;base64,{b64}" download="{filename}">Download Plot as PNG</a>'
-        st.markdown(href, unsafe_allow_html=True)
-    except Exception as e:
-        st.error(f"Error generating PNG: {e}")
-else:
-    st.write('Select a valid plot type and axes.')
-
-# Additional plotting options for Kvalues and Control Points
-st.sidebar.header('Additional Plots')
-plot_additional = st.sidebar.checkbox('Plot Additional Data')
-if plot_additional:
-    additional_x_axis = st.sidebar.selectbox('Select X Axis for Additional Plot', kvalues_df.columns)
-    additional_y_axis = st.sidebar.selectbox('Select Y Axis for Additional Plot', kvalues_df.columns)
-    additional_df = kvalues_df.copy()
-    # Apply filters based on zone and level from control_points_df
-    if 'Zone' in control_points_df.columns and 'Level' in control_points_df.columns:
-        selected_zone = st.sidebar.selectbox('Select Zone', control_points_df['Zone'].unique())
-        selected_level = st.sidebar.selectbox('Select Level', control_points_df['Level'].unique())
-        additional_df = additional_df[(additional_df['Zone'] == selected_zone) & (additional_df['Level'] == selected_level)]
-
-    additional_fig = px.scatter(additional_df, x=additional_x_axis, y=additional_y_axis)
-    st.plotly_chart(additional_fig)
