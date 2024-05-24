@@ -16,6 +16,10 @@ control_points_df = pd.read_csv(control_points_path)
 kvalues_df['Level'] = kvalues_df['Label_unique'].str[:2]
 kvalues_df['Zone'] = kvalues_df['Label_unique'].str[-2:]
 
+# Extract level and zone from control points
+control_points_df['Level'] = control_points_df['ID'].str[:2]
+control_points_df['Zone'] = control_points_df['ID'].str[-2:]
+
 # Reset button
 if st.sidebar.button('Reset All'):
     st.experimental_rerun()
@@ -57,18 +61,14 @@ elif file_selection == 'Kvalues':
     y_axis = st.sidebar.selectbox('Select Y Axis', df.columns)
     z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
 else:
-    # Check if 'Label_unique' exists in hydrographs_df
-    if 'Label_unique' in hydrographs_df.columns:
-        df = hydrographs_df.copy()
-        # Adding extra columns from kvalues_df and control_points_df using VLOOKUP-like functionality
-        df = df.merge(control_points_df[['ID', 'Zone', 'Level']], left_on='Label_unique', right_on='ID', how='left')
-        df = df.merge(kvalues_df, on=['Level', 'Zone'], how='left', suffixes=('_hydro', '_kvalues'))
-        x_axis = st.sidebar.selectbox('Select X Axis', df.columns)
-        y_axis = st.sidebar.selectbox('Select Y Axis', df.columns)
-        z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
-    else:
-        st.error("The column 'Label_unique' does not exist in the hydrographs DataFrame.")
-        df = pd.DataFrame()  # Create an empty DataFrame to avoid further errors
+    # Create a combined DataFrame using lookup logic
+    combined_df = hydrographs_df.copy()
+    combined_df = combined_df.merge(control_points_df[['ID', 'Zone', 'Level']], left_on='Label_unique', right_on='ID', how='left')
+    combined_df = combined_df.merge(kvalues_df, on=['Level', 'Zone'], how='left', suffixes=('_hydro', '_kvalues'))
+    df = combined_df
+    x_axis = st.sidebar.selectbox('Select X Axis', df.columns)
+    y_axis = st.sidebar.selectbox('Select Y Axis', df.columns)
+    z_axis = st.sidebar.selectbox('Select Z Axis (if applicable)', [None] + list(df.columns))
 
 # Filtering options
 with st.sidebar.expander('Filter Options', expanded=False):
